@@ -6,7 +6,9 @@ A step-by-step guide for UX students with no coding experience. It covers using 
 
 - **Workspace tour:** four short videos on the screens of the free Claude plan (home, Projects, Artifacts, Customize).
 - **Part 1: Build it in Claude:** nine steps, from copying the prompt to exporting and checking `index.html`.
-- **Part 2: Publish it on GitHub Pages:** seven steps, from creating a repository to a live link, README and description.
+- **Choose a route:** share a link from your own GitHub Pages site, or run a guided user test in the [Desktop Tester](https://github.com/martinsolent/desktop_tester). The choice changes a few checks in Part 1 and the whole of Part 2. Add `?route=tester` or `?route=share` to the link to open a route directly.
+- **Part 2 (share a link): Publish it on GitHub Pages:** seven steps, from creating a repository to a live link, README and description.
+- **Part 2 (Desktop Tester):** seven steps, from downloading the tester to a live test in `tests/project`, using the Hushroom room-booking prototype as the example.
 - Short videos for every step, copy-ready prompts, checklists and troubleshooting.
 
 ## Files
@@ -16,7 +18,9 @@ A step-by-step guide for UX students with no coding experience. It covers using 
 | `index.html` | The whole guide: HTML, CSS and JavaScript in one file. |
 | `workspace-videos/` | Four videos touring the free Claude workspace. |
 | `step-videos/` | Nine videos, one for each step in Part 1. |
-| `github-videos/` | Seven videos, one for each step in Part 2. |
+| `github-videos/` | Seven videos, one for each step in Part 2 (share a link). |
+| `tester-images/` | Screenshots for Part 2 (Desktop Tester). |
+| `tester-videos/` | Videos for Part 2 (Desktop Tester): the builder, uploading test.json, running the test, and swapping files with GitHub Desktop. |
 
 ## How to use it
 
