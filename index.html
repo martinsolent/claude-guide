@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Prompt to Single-File Prototype — Claude Free Plan Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2129; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --green:#3fb950;
+    --amber:#d29922; --red:#f85149; --purple:#bc8cff;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;line-height:1.6;font-size:17px}
+  a{color:var(--accent)}
+  code,pre,.mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+  code{background:var(--panel2);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
+  .wrap{max-width:900px;margin:0 auto;padding:0 20px 80px}
+
+  header.hero{border-bottom:1px solid var(--border);background:linear-gradient(180deg,#161b22 0%,#0d1117 100%);padding:48px 0 36px}
+  .eyebrow{font-family:'JetBrains Mono',monospace;color:var(--green);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase}
+  h1{font-size:clamp(1.9rem,4.5vw,2.7rem);line-height:1.15;margin:10px 0 14px}
+  .lede{color:var(--muted);font-size:1.1rem;max-width:680px;margin:0}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+  .badge{font-family:'JetBrains Mono',monospace;font-size:.75rem;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted)}
+
+  .progress{position:sticky;top:0;z-index:10;background:rgba(13,17,23,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+  .progress .wrap{padding:10px 20px;display:flex;align-items:center;gap:14px}
+  .bar{flex:1;height:8px;background:var(--panel2);border-radius:99px;overflow:hidden;border:1px solid var(--border)}
+  .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--green));transition:width .3s}
+  .progress small{font-family:'JetBrains Mono',monospace;color:var(--muted);white-space:nowrap}
+  .reset{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 9px;font:inherit;font-size:.75rem;cursor:pointer}
+  .reset:hover{color:var(--text)}
+
+  h2{font-size:1.45rem;margin:52px 0 12px}
+  .flow{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin:24px 0}
+  .flow svg{width:100%;height:auto;display:block}
+
+  .step{background:var(--panel);border:1px solid var(--border);border-radius:12px;margin:22px 0;overflow:hidden;transition:border-color .2s}
+  .step.done{border-color:rgba(63,185,80,.55)}
+  .step-head{display:flex;gap:14px;align-items:flex-start;padding:18px 20px;border-bottom:1px solid var(--border);background:var(--panel2)}
+  .num{flex:none;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-family:'JetBrains Mono',monospace;font-weight:600;background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.4)}
+  .num.gh{background:rgba(63,185,80,.12);color:var(--green);border-color:rgba(63,185,80,.45)}
+  .step.done .num{background:rgba(63,185,80,.15);color:var(--green);border-color:rgba(63,185,80,.5)}
+  .step-head h3{margin:4px 0 2px;font-size:1.18rem}
+  .step-head p{margin:0;color:var(--muted);font-size:.95rem}
+  .step-body{padding:6px 22px 18px}
+  .step-body ol,.step-body ul{padding-left:22px}
+  .step-body li{margin:6px 0}
+  .tick{margin-left:auto;flex:none;display:flex;align-items:center;gap:7px;font-size:.82rem;color:var(--muted);cursor:pointer;user-select:none;padding-top:8px}
+  .tick input{width:18px;height:18px;accent-color:var(--green);cursor:pointer}
+
+  .callout{border-left:3px solid var(--accent);background:rgba(88,166,255,.07);padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0;font-size:.96rem}
+  .callout.tip{border-color:var(--green);background:rgba(63,185,80,.07)}
+  .callout.warn{border-color:var(--amber);background:rgba(210,153,34,.08)}
+  .callout strong{display:block;margin-bottom:2px}
+
+  .copybox{position:relative;margin:14px 0}
+  .copybox .label{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+  .copybox pre{margin:0;background:#010409;border:1px solid var(--border);border-radius:8px;padding:16px 16px 16px;white-space:pre-wrap;word-wrap:break-word;font-size:.84rem;line-height:1.55;color:#c9d1d9}
+  .copybtn{position:absolute;top:26px;right:8px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;cursor:pointer}
+  .copybtn:hover{border-color:var(--accent)}
+  .copybtn.ok{color:var(--green);border-color:var(--green)}
+
+  .checklist{list-style:none;padding:0!important}
+  .checklist li{position:relative;display:block;padding:6px 0 6px 26px;border-bottom:1px dashed var(--border)}
+  .checklist li:last-child{border-bottom:none}
+  .checklist li::before{content:"□";position:absolute;left:0;top:6px;color:var(--accent);font-family:'JetBrains Mono',monospace}
+  .checklist code{white-space:nowrap}
+
+  .compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .compare div{border:1px solid var(--border);border-radius:8px;padding:12px 14px;background:#010409;font-size:.84rem}
+  .compare .good{border-color:rgba(63,185,80,.5)}
+  .compare .bad{border-color:rgba(248,81,73,.5)}
+  .compare h4{margin:0 0 6px;font-family:'DM Sans',sans-serif;font-size:.9rem}
+  .compare .good h4{color:var(--green)} .compare .bad h4{color:var(--red)}
+  .compare pre{margin:0;white-space:pre-wrap;font-size:.78rem;color:#c9d1d9}
+
+  details{background:var(--panel);border:1px solid var(--border);border-radius:10px;margin:10px 0;padding:0 18px}
+  summary{cursor:pointer;padding:14px 0;font-weight:500}
+  details[open] summary{border-bottom:1px solid var(--border);margin-bottom:8px}
+  details p,details ul{margin:8px 0 14px}
+
+  .next{margin-top:48px;background:linear-gradient(135deg,rgba(88,166,255,.12),rgba(188,140,255,.10));border:1px solid var(--border);border-radius:14px;padding:24px}
+  .next h2{margin-top:0}
+  footer{color:var(--muted);font-size:.85rem;text-align:center;margin-top:50px}
+
+  .vid{margin:14px 0 16px;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#000}
+  .vid video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
+  .vid figcaption{background:var(--panel2);padding:8px 14px;font-size:.85rem;color:var(--muted);border-top:1px solid var(--border)}
+  .tour{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}
+  .tour figure{margin:0;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .tour video{display:block;width:100%;aspect-ratio:16/9;background:#000}
+  .tour .tcap{padding:12px 16px 14px}
+  .tour .tcap b{display:block;font-size:1rem;margin-bottom:3px}
+  .tour .tcap span{color:var(--muted);font-size:.9rem;line-height:1.5}
+  @media (max-width:640px){.tour{grid-template-columns:1fr}}
+  body[data-route="share"] .route-tester, body[data-route="tester"] .route-share{display:none!important}
+  .route{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:24px 0}
+  .route h2{margin:0 0 6px;font-size:1.25rem}
+  .route p{margin:6px 0;color:var(--muted)}
+  .seg{display:grid;grid-template-columns:1fr 1fr;max-width:760px;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:10px 0 6px}
+  .seg button{background:var(--panel2);color:var(--text);border:0;border-right:1px solid var(--border);padding:10px 16px;font:inherit;font-size:.95rem;cursor:pointer;text-align:left}
+  .seg button:last-child{border-right:0}
+  @media (max-width:640px){.seg{grid-template-columns:1fr}.seg button{border-right:0;border-bottom:1px solid var(--border)}.seg button:last-child{border-bottom:0}}
+  .seg button small{display:block;color:var(--muted);font-size:.8rem}
+  .seg button[aria-pressed="true"]{background:rgba(88,166,255,.18);box-shadow:inset 0 -3px 0 var(--accent)}
+  .seg button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+  .rtag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:1px 8px;border-radius:999px;border:1px solid rgba(188,140,255,.5);color:var(--purple);margin-right:6px;vertical-align:1px}
+  .routepill{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);white-space:nowrap}
+  figure.shot{margin:14px 0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#010409}
+  figure.shot img{display:block;width:100%;height:auto}
+  figure.shot figcaption{background:var(--panel2);padding:8px 14px;font-size:.85rem;color:var(--muted);border-top:1px solid var(--border)}
+  .vid.wide video{aspect-ratio:auto}
+  @media (max-width:640px){
+    .compare{grid-template-columns:1fr}
+    .step-head{flex-wrap:wrap}
+    .tick{margin-left:52px;padding-top:0}
+    body{font-size:16px}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Vibe Coding · Free plan</div>
+    <h1>From prompt to a live prototype with Claude and GitHub Pages</h1>
+    <p class="lede">You've built your prompt in the Prompt Studio. This guide takes you through pasting it into Claude on the free plan, checking what comes back, fixing it, and saving it as <strong>one HTML file</strong> with all the styling and code inside. Part 2 then publishes it on GitHub Pages, so you have a link to send to your test participants.</p>
+    <div class="badges">
+      <span class="badge">⏱ about 45–60 min</span>
+      <span class="badge">💸 free Claude + GitHub accounts</span>
+      <span class="badge">🧑‍🎨 no coding needed</span>
+      <span class="badge">🔗 output: a live link, or a test in the Desktop Tester</span>
+    </div>
+  </div>
+</header>
+
+<div class="progress" aria-label="Your progress">
+  <div class="wrap">
+    <div class="bar"><span id="barFill"></span></div>
+    <small id="barText">0 of 16 steps</small>
+    <span class="routepill" id="routePill"></span>
+    <button class="reset" id="resetBtn" type="button">Reset</button>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <h2>The journey at a glance</h2>
+  <div class="flow">
+    <svg viewBox="0 0 820 150" role="img" aria-label="Flow: Prompt Studio, Claude chat, Preview and test, Fix, Save index.html, then publish it as a link or in the Desktop Tester">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#8b949e"/>
+        </marker>
+      </defs>
+      <g font-family="DM Sans, sans-serif" font-size="13" text-anchor="middle">
+        <rect x="5" y="40" width="115" height="62" rx="10" fill="#1c2129" stroke="#58a6ff"/>
+        <text x="62" y="67" fill="#e6edf3" font-weight="700">Prompt Studio</text>
+        <text x="62" y="86" fill="#8b949e" font-size="11">copy prompt</text>
+
+        <rect x="145" y="40" width="115" height="62" rx="10" fill="#1c2129" stroke="#58a6ff"/>
+        <text x="202" y="67" fill="#e6edf3" font-weight="700">Claude chat</text>
+        <text x="202" y="86" fill="#8b949e" font-size="11">paste + send</text>
+
+        <rect x="285" y="40" width="115" height="62" rx="10" fill="#1c2129" stroke="#bc8cff"/>
+        <text x="342" y="67" fill="#e6edf3" font-weight="700">Preview</text>
+        <text x="342" y="86" fill="#8b949e" font-size="11">click through it</text>
+
+        <rect x="425" y="40" width="115" height="62" rx="10" fill="#1c2129" stroke="#d29922"/>
+        <text x="482" y="67" fill="#e6edf3" font-weight="700">Fix</text>
+        <text x="482" y="86" fill="#8b949e" font-size="11">small requests</text>
+
+        <rect x="565" y="40" width="115" height="62" rx="10" fill="#1c2129" stroke="#3fb950"/>
+        <text x="622" y="67" fill="#e6edf3" font-weight="700">index.html</text>
+        <text x="622" y="86" fill="#8b949e" font-size="11">one file, saved</text>
+
+        <rect x="705" y="40" width="110" height="62" rx="10" fill="#0d1117" stroke="#3fb950" stroke-dasharray="5 4"/>
+        <text x="760" y="67" fill="#3fb950" font-weight="700">Publish</text>
+        <text x="760" y="86" fill="#8b949e" font-size="11">link or Desktop Tester</text>
+
+        <g stroke="#8b949e" stroke-width="1.5" marker-end="url(#arr)">
+          <line x1="122" y1="71" x2="142" y2="71"/>
+          <line x1="262" y1="71" x2="282" y2="71"/>
+          <line x1="402" y1="71" x2="422" y2="71"/>
+          <line x1="542" y1="71" x2="562" y2="71"/>
+          <line x1="682" y1="71" x2="702" y2="71"/>
+        </g>
+        <path d="M482 104 C482 138, 342 138, 342 104" fill="none" stroke="#d29922" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+        <text x="412" y="146" fill="#d29922" font-size="11">repeat until it works</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="callout">
+    <strong>Why one file?</strong>
+    A prototype that's a single <code>index.html</code>, with its styles in a <code>&lt;style&gt;</code> tag and its code in a <code>&lt;script&gt;</code> tag, is the easiest thing to host. You upload one file to GitHub, switch on Pages, and you get a link to send to your test participants. You don't have folders to manage or missing files to chase.
+   It's also exactly what the Desktop Tester expects: one <code>index.html</code> dropped into its prototype folder.
+  </div>
+
+  <section class="route" id="route" aria-labelledby="routeH">
+    <h2 id="routeH">Where will you test it?</h2>
+    <p>Part 1 is almost the same either way. The choice changes a few checks along the way and the whole of Part 2. You can switch at any time.</p>
+    <div class="seg" role="group" aria-label="Where will you test it?">
+      <button type="button" data-route="share" aria-pressed="true">🔗 Share a link<small>Your own GitHub Pages site. Works on phones and computers.</small></button>
+      <button type="button" data-route="tester" aria-pressed="false">🖥 Desktop Tester<small>A guide panel reads out each task and ticks it off. Laptop or desktop only.</small></button>
+    </div>
+    <p class="route-share">You'll publish your prototype on its own GitHub Pages site and send testers the link.</p>
+    <p class="route-tester">You'll put your prototype into your own copy of the <a href="https://github.com/martinsolent/desktop_tester" target="_blank" rel="noopener">Desktop Tester</a> app. Testers get one link, and the app guides them through your tasks. Steps marked <span class="rtag">Desktop Tester</span> are extra checks for this route.</p>
+  </section>
+
+  <h2 id="tour">Before you start: a tour of the Claude workspace</h2>
+  <p>If you haven't used Claude before, watch these four short videos first. They show the screens of the free plan in the browser and what each one is for. You'll mostly use the <strong>home screen</strong>, but it helps to know where the rest are.</p>
+  <div class="tour">
+    <figure id="tour-home">
+      <video controls preload="metadata" playsinline src="workspace-videos/workspace-1-home-screen.mp4#t=1.2"></video>
+      <div class="tcap"><b>1 · The home screen</b><span>The sidebar, the message box where you paste your prompt, and the buttons around it. You'll use this in steps 4–7. (43s)</span></div>
+    </figure>
+    <figure id="tour-projects">
+      <video controls preload="metadata" playsinline src="workspace-videos/workspace-2-projects.mp4#t=1.2"></video>
+      <div class="tcap"><b>2 · Projects</b><span>Keep the chats, files and instructions for one prototype together. Optional: handy if you build several prototypes. (26s)</span></div>
+    </figure>
+    <figure id="tour-artifacts">
+      <video controls preload="metadata" playsinline src="workspace-videos/workspace-3-artifacts.mp4#t=1.2"></video>
+      <div class="tcap"><b>3 · Artifacts</b><span>Where everything Claude builds for you is kept, including your prototype. Useful after step 7 to find it again. (26s)</span></div>
+    </figure>
+    <figure id="tour-customize">
+      <video controls preload="metadata" playsinline src="workspace-videos/workspace-4-customize.mp4#t=1.2"></video>
+      <div class="tcap"><b>4 · Customize</b><span>Skills, connectors and plugins that add extra abilities. Not needed for this guide. (31s)</span></div>
+    </figure>
+  </div>
+
+  <h2 id="part1">Part 1: Build it in Claude</h2>
+  <p>Each step starts with a short video (about 20 seconds) showing what to do, followed by the full instructions. Steps 4–7 use real screens from the free plan. The other steps use simplified screens.</p>
+
+  <!-- STEP 1 -->
+  <section class="step" data-step="1">
+    <div class="step-head">
+      <div class="num">1</div>
+      <div><h3>Get set up</h3><p>Have these ready before you start.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-1-get-set-up.mp4#t=1.2"></video><figcaption>▶ Step 1: the five things to have ready (simplified screens)</figcaption></figure>
+      <ul class="checklist">
+        <li>A laptop or desktop and an up-to-date browser (Chrome, Edge, Firefox or Safari). Phones are fine for testing later but awkward for this part.</li>
+        <li>A free Claude account. Sign up at <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> with your email or Google account.</li>
+        <li>Your finished prompt from the <strong>Vibe Coding Prompt Studio</strong>, with the <em>Free plan</em> option selected.</li>
+        <li>A text editor to look inside the file: <strong>Notepad</strong> (Windows), <strong>TextEdit</strong> (Mac) or <strong>VS Code</strong> if you have it.</li>
+        <li>A folder for your project, for example <code>my-prototype</code>.</li>
+        <li>A free GitHub account for Part 2. Sign up at <a href="https://github.com" target="_blank" rel="noopener">github.com</a>.</li>
+        <li class="route-tester"><span class="rtag">Desktop Tester</span>A laptop or desktop for the testing too: the Desktop Tester doesn't run on phones. You'll download the app itself in Part 2.</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Free plan limits</strong>
+        The free plan gives you a limited number of messages, and the limit resets every few hours. A long first build uses a lot of that in one go. Plan for it: <strong>one big first prompt, then a few small, focused fixes</strong>. Don't spend messages chatting.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step" data-step="2">
+    <div class="step-head">
+      <div class="num">2</div>
+      <div><h3>Copy your prompt from the Prompt Studio</h3><p>Use the copy button so nothing gets left out.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-2-copy-your-prompt.mp4#t=1.2"></video><figcaption>▶ Step 2: Level 1, Free, Pico CSS, Desktop, One HTML file and Ready for Desktop Tester, then Copy prompt (real screens)</figcaption></figure>
+      <ol>
+        <li>Open the <a href="https://martinsolent.github.io/ux_vibe_code_prompt/vibe-coding-prompt-studio.html" target="_blank" rel="noopener">Vibe Coding Prompt Studio</a>.</li>
+        <li>Check your choices: your scenario, the screens, your design system, <strong>Free plan</strong>, and <strong>Output format: One HTML file</strong>.</li>
+        <li class="route-tester"><span class="rtag">Desktop Tester</span>Also set <strong>Device</strong> to <strong>Desktop / laptop</strong> and tick <strong>Ready for Desktop Tester</strong>. This adds a Testing section to your prompt, so tasks can tick themselves off later.</li>
+        <li>Click the <strong>Copy</strong> button. Selecting by hand can miss the bottom of a long prompt.</li>
+        <li>Optional: paste it into a text file and save it as <code>my-prompt.txt</code>. If something goes wrong you can start a fresh chat without rebuilding the prompt.</li>
+      </ol>
+      <div class="callout warn">
+        <strong>Chose "Separate pages"?</strong>
+        This guide covers one HTML file. On the free plan, Export only downloads one file, so separate pages are hard to save. Switch the Studio's output format back to <strong>One HTML file</strong> and copy the prompt again.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step" data-step="3">
+    <div class="step-head">
+      <div class="num">3</div>
+      <div><h3>Make sure the prompt asks for one file</h3><p>A quick safety check before you send.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-3-check-prompt-asks-one-file.mp4#t=1.2"></video><figcaption>▶ Step 3: the FORMAT section at the top and the TESTING section at the end (real screens)</figcaption></figure>
+      <p>Prompts from the Studio already ask for a single file. Read the end of your prompt anyway. If you can't find a clear line about one HTML file with everything inline, paste this block at the very end:</p>
+      <div class="copybox route-share">
+        <div class="label">Single-file instruction — paste at the end of your prompt</div>
+        <button class="copybtn" type="button">Copy</button>
+<pre>OUTPUT FORMAT — IMPORTANT
+- Give me ONE complete HTML file, ready to save as index.html.
+- Put ALL CSS inside a single &lt;style&gt; tag in the &lt;head&gt;.
+- Put ALL JavaScript inside a single &lt;script&gt; tag before &lt;/body&gt;.
+- Do not use separate .css or .js files, and no React, build tools or npm.
+- Only use external links for web fonts or a design system's CDN stylesheet.
+- Use inline SVG, emoji or CSS shapes instead of image files.
+- Use made-up sample data written into the code; no real logins or servers.
+- Make every button and link the user taps actually do something.
+- Make it work on a phone-sized screen as well as desktop.
+- Show it as an artifact I can preview.</pre>
+      </div>
+      <div class="copybox route-tester">
+        <div class="label">Single-file and Desktop Tester instruction — paste at the end of your prompt</div>
+        <button class="copybtn" type="button">Copy</button>
+<pre>OUTPUT FORMAT — IMPORTANT
+- Give me ONE complete HTML file, ready to save as index.html.
+- Put ALL CSS inside a single &lt;style&gt; tag in the &lt;head&gt;.
+- Put ALL JavaScript inside a single &lt;script&gt; tag before &lt;/body&gt;.
+- Do not use separate .css or .js files, and no React, build tools or npm.
+- Only use external links for web fonts or a design system's CDN stylesheet.
+- Use inline SVG, emoji or CSS shapes instead of image files.
+- Use made-up sample data written into the code; no real logins or servers.
+- Make every button and link actually do something.
+- Show it as an artifact I can preview.
+
+TESTING (it will be user tested in the Desktop Tester app, shown in a frame about 900px wide on a laptop)
+- Give every screen its own URL hash, using a short lowercase name (e.g. #home, #checkout). Show the right screen when the hash changes, and the first screen if there is no hash. Every link and button that moves to another screen must change the hash.
+- Only reach a success or confirmation screen once the action has really worked, e.g. after the form passes validation.
+- Give every important button and link a short, unique id in lowercase with dashes (e.g. id="confirm-booking").
+- Show the full desktop layout from 860px wide, including the full navigation with no burger menu.
+- Don't use alert(), confirm(), prompt(), window.top, or new windows or tabs.
+- When you've finished, give me two short tables: every screen's #hash and what it shows, and every important button id and what it does.</pre>
+      </div>
+      <p class="route-tester">If you ticked <strong>Ready for Desktop Tester</strong> in the Studio, your prompt already has a TESTING section like this, so you don't need to add it.</p>
+      <div class="callout tip">
+        <strong>Why mention "artifact"?</strong>
+        When Claude builds something like a web page, it usually opens it in a panel next to the chat, called an <em>artifact</em>. You can see your prototype working there before you save anything.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step" data-step="4">
+    <div class="step-head">
+      <div class="num">4</div>
+      <div><h3>Start a new chat and send the prompt</h3><p>Use a fresh chat for each prototype.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-4-new-chat-and-send.mp4#t=1.2"></video><figcaption>▶ Step 4: new chat, paste, send, and where the prototype appears (real free-plan screens)</figcaption></figure>
+      <ol>
+        <li>Go to <a href="https://claude.ai" target="_blank" rel="noopener">claude.ai</a> and sign in.</li>
+        <li>Start a <strong>new chat</strong> with <strong>＋ New</strong> at the top of the sidebar. Old conversations add clutter and use up your allowance faster.</li>
+        <li>Check the switch under the message box is on <strong>Chat</strong>, not Cowork, and leave the model as it is. The <a href="#tour-home">home screen tour</a> shows where these are.</li>
+        <li>Click in the message box and paste (<code>Ctrl&nbsp;+&nbsp;V</code> on Windows, <code>⌘&nbsp;+&nbsp;V</code> on Mac).</li>
+        <li>Scroll through the box quickly to check the whole prompt pasted in.</li>
+        <li>Press <strong>Enter</strong> or click the send arrow.</li>
+        <li>Wait. A full prototype can take a minute or two. <strong>Don't stop it or send anything until it has finished.</strong></li>
+      </ol>
+      <div class="callout">
+        <strong>What you'll see</strong>
+        Your prototype opens in a <strong>panel on the right</strong> of the chat, and it's already working. In the chat itself, Claude adds an <strong>artifact card</strong> with the prototype's name. Click that card any time to open the prototype again. Claude also explains what it built and how to walk through it.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="step" data-step="5">
+    <div class="step-head">
+      <div class="num">5</div>
+      <div><h3>Test it in the preview</h3><p>Use it the way a test participant would.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-5-test-in-preview.mp4#t=1.2"></video><figcaption>▶ Step 5: trying the main task in the preview, and saving Claude's two tables (real screens)</figcaption></figure>
+      <p>Before you ask for any changes, go through the prototype and <strong>write down everything that's wrong in one list</strong>. You'll send all the fixes together, which saves messages.</p>
+      <ul class="checklist">
+        <li>Use the <strong>expand</strong> button at the top right of the panel to see it full size.</li>
+        <li>Read Claude's explanation in the chat. It tells you how to walk through the main task.</li>
+        <li>Does it open on the right first screen?</li>
+        <li>Can you complete the main task in your scenario from start to finish?</li>
+        <li>Does every tab, button and link do something, with no dead ends?</li>
+        <li>Can you always get back (back button, home, close)?</li>
+        <li>Do forms respond: error messages, success messages, data that appears afterwards?</li>
+        <li>Does it look like your chosen design system (colours, buttons, type)?</li>
+        <li>Is the text readable, with enough contrast and nothing cut off?</li>
+        <li class="route-tester"><span class="rtag">Desktop Tester</span>Find the two tables Claude gave you at the end of its reply: the screen addresses (<code>#home</code>, <code>#checkout</code>…) and the button ids. Copy them into a text file called <code>my-test-setup.txt</code> in your project folder. You'll use them to set up the tasks in Part 2.</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Looks plain in the preview?</strong>
+        That's normal if your design system loads from the web (Pico, Bootstrap, Material and most others). Claude's preview panel blocks outside stylesheets, so you'll see default fonts and blue links. Use the preview to check the flow: buttons, screens and error messages. You'll check the real look in step 9, once the file is downloaded.
+      </div>
+      <div class="callout">
+        <strong>Where's the code?</strong>
+        On the free plan you only see the working prototype, not its code. The <strong>Code</strong> item in the sidebar is Claude Code, a separate paid tool, so ignore it. You'll check the code in step 8, after you've downloaded the file.
+      </div>
+      <div class="callout warn">
+        <strong>Blank or broken preview?</strong>
+        This usually means the build got cut off, which can happen with very long builds on the free plan. See the troubleshooting section below.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 6 -->
+  <section class="step" data-step="6">
+    <div class="step-head">
+      <div class="num">6</div>
+      <div><h3>Fix it with small, clear requests</h3><p>Ask for one batch of changes at a time.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-6-fix-small-requests.mp4#t=1.2"></video><figcaption>▶ Step 6: sending fixes and seeing the panel update (real free-plan screens)</figcaption></figure>
+      <p>Type your fixes into the message box of the same chat. Short, specific requests work better than "make it better". Say <strong>what</strong> is wrong, <strong>where</strong> it is, and <strong>what should happen</strong>.</p>
+      <div class="compare">
+        <div class="bad"><h4>✗ Vague</h4><pre>It doesn't work properly, fix it and make it look nicer.</pre></div>
+        <div class="good"><h4>✓ Specific</h4><pre>On the Stock levels tab, the "Create reorder list" button does nothing. It should show a list of the low-stock items. Also make the tab labels larger.</pre></div>
+      </div>
+      <div class="copybox">
+        <div class="label">Fix template — fill in and send</div>
+        <button class="copybtn" type="button">Copy</button>
+<pre>Please make these changes and give me the COMPLETE updated single HTML file (not just the changed parts):
+
+1. On the [screen name] screen, [what's wrong]. It should [what should happen].
+2. On the [screen name] screen, [what's wrong]. It should [what should happen].
+3. [Any visual change, e.g. "use the primary button style for all main actions"].
+
+Keep everything else exactly the same.</pre>
+      </div>
+      <div class="callout tip">
+        <strong>Why ask for the "complete" file?</strong>
+        Claude then rebuilds the whole prototype with your changes, so the panel always holds a complete, working version that you can export.
+      </div>
+      <div class="route-tester">
+        <p><span class="rtag">Desktop Tester</span>Built it without the testing instructions, or Claude didn't give you the tables? Send this once:</p>
+        <div class="copybox">
+          <div class="label">Make it test-ready</div>
+          <button class="copybtn" type="button">Copy</button>
+<pre>Update this prototype so it works with the Desktop Tester app, which shows it in a frame about 900px wide on a laptop. Give every screen its own URL hash, e.g. #home, #checkout, including success screens, and make every link and button that moves screen change the hash. Only reach a success screen once the action has really worked. Show the full desktop layout from 860px wide, with no burger menu. Give every important button a short, unique id. Don't change anything else. Give me the COMPLETE updated single HTML file, then list every screen hash and button id in two tables.</pre>
+        </div>
+      </div>
+      <p>Repeat steps 5 and 6 until the prototype works well enough to test. <strong>Aim for three or four rounds at most</strong>. It's a prototype for testing ideas, so it doesn't need to be perfect.</p>
+    </div>
+  </section>
+
+  <!-- STEP 7 -->
+  <section class="step" data-step="7">
+    <div class="step-head">
+      <div class="num">7</div>
+      <div><h3>Download it as HTML</h3><p>Use Export to save a copy to your computer.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-7-download-as-html.mp4#t=1.2"></video><figcaption>▶ Step 7: Export → HTML (real free-plan screens)</figcaption></figure>
+      <ol>
+        <li>At the top of the prototype panel, click <strong>Export</strong>.</li>
+        <li>In the menu, find <strong>HTML: Standalone web page</strong> and click the <strong>download arrow</strong> next to it.</li>
+        <li>The file goes to your <strong>Downloads</strong> folder, named after your prototype.</li>
+      </ol>
+      <div class="callout">
+        <strong>"Sharing isn't included in your plan"</strong>
+        You'll see this note in the Export menu. The free plan can't share a Claude link to your prototype, but it can export a copy. That's all you need, because you'll publish it yourself on GitHub Pages. Ignore <em>Markdown</em> and <em>PDF</em>: neither one works as a clickable prototype.
+      </div>
+      <div class="callout tip">
+        <strong>Finding it again later</strong>
+        Claude keeps your prototype in <strong>Artifacts</strong> in the sidebar, so you can reopen it in another session. Opened from there, it fills the page. Export is in the same place, and <strong>Show chat</strong> takes you back to the conversation. See the <a href="#tour-artifacts">Artifacts tour</a>.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 8 -->
+  <section class="step" data-step="8">
+    <div class="step-head">
+      <div class="num">8</div>
+      <div><h3>Check it's one file and name it index.html</h3><p>Look inside the download, then rename it.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-8-check-and-name-index-html.mp4#t=1.2"></video><figcaption>▶ Step 8: renaming the file, then searching it in Notepad (simplified screens)</figcaption></figure>
+      <p><strong>Open the downloaded file in a text editor</strong>, not a browser, so you see the code. Right-click the file and choose <em>Open with</em>:</p>
+      <ul>
+        <li><strong>Windows:</strong> Notepad (or VS Code).</li>
+        <li><strong>Mac:</strong> VS Code, or TextEdit. If TextEdit shows a web page instead of code, go to <em>TextEdit → Settings → Open and Save</em>, tick <em>Display HTML files as HTML code instead of formatted text</em>, then open the file again.</li>
+      </ul>
+      <p>Check these four things. You don't need to understand the code, only spot the patterns:</p>
+      <ul class="checklist">
+        <li>It starts with <code>&lt;!DOCTYPE html&gt;</code> and ends with <code>&lt;/html&gt;</code>. If the end is missing, the build was cut off.</li>
+        <li>There's a <code>&lt;style&gt;</code> tag near the top with lots of styling inside it.</li>
+        <li>There's a <code>&lt;script&gt;</code> tag near the bottom with code inside it.</li>
+        <li>There are <strong>no</strong> lines like <code>&lt;link href="styles.css"&gt;</code> or <code>&lt;script src="app.js"&gt;</code> pointing at your own separate files. Links to <code>fonts.googleapis.com</code> or a design system's library online are fine.</li>
+      </ul>
+      <div class="compare">
+        <div class="good"><h4>✓ Single file</h4><pre>&lt;head&gt;
+  &lt;style&gt;
+    .btn { background:#8a4b2a; }
+  &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt; …
+  &lt;script&gt;
+    function showTab(id){ … }
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre></div>
+        <div class="bad"><h4>✗ Split into files</h4><pre>&lt;head&gt;
+  &lt;link rel="stylesheet"
+        href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt; …
+  &lt;script src="app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;</pre></div>
+      </div>
+      <div class="route-tester">
+        <p><span class="rtag">Desktop Tester</span>Three more quick checks. Use <code>Ctrl&nbsp;+&nbsp;F</code> (<code>⌘&nbsp;+&nbsp;F</code> on a Mac) to search the file:</p>
+        <ul class="checklist">
+          <li>Search for <code>hashchange</code> or <code>location.hash</code>. Finding one means each screen has its own address.</li>
+          <li>Search for <code>id="</code> near your main buttons, e.g. <code>id="confirm-booking"</code>.</li>
+          <li>Search for <code>alert(</code>, with the bracket. You shouldn't find any: pop-ups block the tester's guide panel. Finding <code>role="alert"</code> is fine. That's different: it helps screen readers read out error messages.</li>
+        </ul>
+        <p>Missing any of these? Send the <strong>Make it test-ready</strong> prompt from step 6, then export again.</p>
+      </div>
+      <p>If it has been split, go back to the chat, send this, then export again:</p>
+      <div class="copybox">
+        <div class="label">Merge into one file</div>
+        <button class="copybtn" type="button">Copy</button>
+<pre>Please combine everything into ONE complete HTML file: put all the CSS inside a &lt;style&gt; tag and all the JavaScript inside a &lt;script&gt; tag. No separate files. Don't change how anything looks or works.</pre>
+      </div>
+      <p><strong>Then rename it.</strong> Close the editor, rename the file to <code>index.html</code>, and move it into your project folder.</p>
+      <div class="callout warn">
+        <strong>Name it exactly <code>index.html</code></strong>
+        Use lowercase and no spaces. Make sure it isn't <code>index.html.txt</code>; on Windows, turn on <em>View → File name extensions</em> to check. GitHub Pages looks for <code>index.html</code> as the home page, so the right name gives you the shortest, cleanest link.
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 9 -->
+  <section class="step" data-step="9">
+    <div class="step-head">
+      <div class="num">9</div>
+      <div><h3>Test the saved file on your computer</h3><p>Check it works outside Claude before you publish it.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="step-videos/step-9-test-saved-file.mp4#t=1.2"></video><figcaption>▶ Step 9: the real design, the full menu at about 900px, and #results in the address bar</figcaption></figure>
+      <ol>
+        <li>Double-click <code>index.html</code>. It should open in your browser.</li>
+        <li>Run through the step 5 checklist again, quickly.</li>
+        <li class="route-share">Make the browser window narrow, about phone width, and check the layout still works. Or press <code>F12</code> and use the phone icon in developer tools.</li>
+        <li class="route-tester"><span class="rtag">Desktop Tester</span>Make the browser window about two thirds of the screen wide (roughly 900px, the size of the tester's frame). The full menu should still show, with no burger icon.</li>
+        <li class="route-tester"><span class="rtag">Desktop Tester</span>Click from screen to screen and watch the address bar. The end of the address should change, e.g. <code>index.html#checkout</code>. That's what lets tasks tick themselves off.</li>
+        <li>If it works here, you're ready for <a href="#part2" class="route-share">Part 2: GitHub Pages</a><a href="#part2t" class="route-tester">Part 2: the Desktop Tester</a>. 🎉</li>
+      </ol>
+      <div class="callout">
+        <strong>Your project folder should now look like this:</strong>
+        <pre class="mono route-share" style="margin:8px 0 0;background:none;border:none;padding:0;color:#c9d1d9">my-prototype/
+├── index.html      ← your prototype (everything inside)
+└── my-prompt.txt   ← optional backup of your prompt</pre>
+        <pre class="mono route-tester" style="margin:8px 0 0;background:none;border:none;padding:0;color:#c9d1d9">my-prototype/
+├── index.html          ← your prototype (everything inside)
+├── my-test-setup.txt   ← Claude's screen and button tables
+└── my-prompt.txt       ← optional backup of your prompt</pre>
+      </div>
+      <div class="callout tip">
+        <strong>Needs the internet</strong>
+        If your design system loads from the web (Material Web, for example), the prototype needs an internet connection to look right. That's fine once it's on GitHub Pages.
+      </div>
+    </div>
+  </section>
+
+  <h2>Troubleshooting: Claude</h2>
+
+  <details>
+    <summary>The preview is blank, or the downloaded file doesn't end with &lt;/html&gt;</summary>
+    <p>Long builds can get cut off. Avoid typing just "continue": the rest arrives as a separate piece that you can't join together on the free plan. Send this instead:</p>
+    <div class="copybox">
+      <div class="label">Shorter rebuild</div>
+      <button class="copybtn" type="button">Copy</button>
+<pre>The prototype was cut off before it finished. Please rebuild the COMPLETE single HTML file from the start, but keep it shorter: fewer sample items, simpler styling, and only the screens needed for the main task.</pre>
+    </div>
+    <p>If it still gets cut off, open a new chat and paste your prompt again with fewer screens.</p>
+  </details>
+
+  <details>
+    <summary>I can't see the code, and "Code" says Upgrade</summary>
+    <p>That's normal on the free plan. The <strong>Code</strong> item in the sidebar is Claude Code, a paid tool for programmers. You don't need it. You check the code yourself in step 8 by opening the downloaded file in a text editor.</p>
+  </details>
+
+  <details>
+    <summary>I want to share a link, but it says sharing isn't included in my plan</summary>
+    <p>The free plan can't share links to what Claude builds. Export the HTML (step 7) and publish it on GitHub Pages instead. That gives you a public link that works for anyone, with no Claude account needed.</p>
+  </details>
+
+  <details>
+    <summary>I've hit my message limit</summary>
+    <p>The free plan resets every few hours, and Claude shows when you can carry on. Meanwhile, export the current version (step 7) so nothing is lost, and write out your next batch of fixes so you're ready to send them.</p>
+  </details>
+
+  <details>
+    <summary>Claude talks about React, JSX or "npm install"</summary>
+    <p>That needs build tools, which is more than we want for a test prototype. Reply with:</p>
+    <div class="copybox">
+      <div class="label">Back to plain HTML</div>
+      <button class="copybtn" type="button">Copy</button>
+<pre>Please rebuild this as plain HTML, CSS and vanilla JavaScript in ONE file. No React, no JSX, no npm, no build step. It must open by double-clicking index.html.</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>A fix broke something that used to work</summary>
+    <p>Say exactly what broke and ask Claude to keep the rest: <em>"Your last change broke the Stock levels tab. It no longer opens. Please fix that without changing anything else."</em> This is also why it helps to export a working copy (for example <code>index-v1.html</code>) before each round of changes.</p>
+  </details>
+
+  <details>
+    <summary>The design doesn't look like my chosen design system</summary>
+    <p>Name the specifics: <em>"Use [design system]'s button, card and input styles, its colour palette, and its font. Link its official library online if it has one."</em> Some design systems don't have a simple online file. In that case, ask Claude to copy the look with CSS inside the file.</p>
+  </details>
+
+  <details>
+    <summary>Images are missing when I open the saved file</summary>
+    <p>The prototype points at image files you don't have. Ask: <em>"Replace all images with inline SVG illustrations, emoji or coloured placeholder boxes so nothing depends on separate image files."</em></p>
+  </details>
+
+  <details>
+    <summary>The preview has no styling, but the downloaded file looks fine</summary>
+    <p>Nothing's wrong. Claude's preview blocks stylesheets loaded from other sites, which is how most design systems arrive. Your file keeps the link, so the styling appears when you open the downloaded <code>index.html</code> in your browser, and on GitHub Pages. Don't ask Claude to fix it: changing the link won't help, and pasting the whole design system into the file makes it too long for the free plan.</p>
+  </details>
+
+  <details>
+    <summary>I chose "Separate pages" in the Studio and Claude gave me several files</summary>
+    <p>Export only saves one file. Ask Claude to put them back together, then export again:</p>
+    <div class="copybox"><div class="label">Combine into one file</div><button class="copybtn" type="button">Copy</button><pre>Combine these files into one self-contained HTML file with all the CSS in a &lt;style&gt; tag and all the JavaScript in a &lt;script&gt; tag. Each former page becomes a screen with its own URL hash. Don't change the design, content or behaviour.</pre></div>
+  </details>
+
+  <details class="route-tester">
+    <summary>Claude didn't give me the screen and button tables</summary>
+    <p>Ask for them on their own, without a rebuild: "List every screen's #hash and what it shows, and every important button id and what it does, in two short tables. Don't change the prototype."</p>
+  </details>
+
+  <div class="route-share">
+  <h2 id="part2">Part 2: Publish it on GitHub Pages</h2>
+  <p>GitHub Pages turns your <code>index.html</code> into a real website with a public link that works on any phone or computer, so you can send it to your test participants. It's free, with no coding: you do everything in the browser.</p>
+  <div class="callout">
+    <strong>You'll need</strong>
+    A free GitHub account (sign up at <a href="https://github.com" target="_blank" rel="noopener">github.com</a>) and your tested <code>index.html</code> from Part 1.
+  </div>
+
+  <!-- GH 1 -->
+  <section class="step" data-step="g1">
+    <div class="step-head">
+      <div class="num gh">1</div>
+      <div><h3>Create a repository</h3><p>A repository ("repo") is a folder on GitHub for one project.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-1-create-repository.mp4#t=1.2"></video><figcaption>▶ Part 2, step 1: creating a new repository</figcaption></figure>
+      <ol>
+        <li>Sign in to <a href="https://github.com" target="_blank" rel="noopener">github.com</a> and open <strong>Repositories</strong> on your profile.</li>
+        <li>Click the green <strong>New</strong> button.</li>
+        <li>Type a <strong>Repository name</strong>: lowercase, no spaces, using <code>-</code> or <code>_</code> between words, e.g. <code>cafe_app</code>. A green tick means the name is free.</li>
+        <li>Leave it <strong>Public</strong>. Free GitHub accounts can only use Pages with public repositories.</li>
+        <li>Turn <strong>Add README</strong> on. You can leave the description for now; you'll add one in step 7.</li>
+        <li>Scroll down and click <strong>Create repository</strong>.</li>
+      </ol>
+      <div class="callout tip">
+        <strong>Choose the name carefully</strong>
+        It becomes part of your web address: <code>your-username.github.io/cafe_app/</code>. Short and clear is best.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 2 -->
+  <section class="step" data-step="g2">
+    <div class="step-head">
+      <div class="num gh">2</div>
+      <div><h3>Upload your file</h3><p>Drag index.html into the repository.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-2-upload-file.mp4#t=1.2"></video><figcaption>▶ Part 2, step 2: Add file → Upload files → Commit changes</figcaption></figure>
+      <ol>
+        <li>In your new repository, click <strong>Add file → Upload files</strong>.</li>
+        <li>Drag <code>index.html</code> from your project folder onto the page, or click <strong>choose your files</strong>.</li>
+        <li>Wait until the file appears in the list and has finished uploading.</li>
+        <li>Click <strong>Commit changes</strong>.</li>
+      </ol>
+      <div class="callout">
+        <strong>What's a commit?</strong>
+        Every change you save on GitHub is a <em>commit</em>: a saved version with a short message saying what changed. You can always go back to an earlier version.
+      </div>
+      <div class="callout tip">
+        <strong>Dragging is the quick way</strong>
+        Developers usually send files to GitHub from VS Code, GitHub Desktop or the terminal. For one file, uploading in the browser is fine.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 3 -->
+  <section class="step" data-step="g3">
+    <div class="step-head">
+      <div class="num gh">3</div>
+      <div><h3>Check it's called index.html</h3><p>Forgot to rename it? You can fix it on GitHub.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-3-check-index-html.mp4#t=1.2"></video><figcaption>▶ Part 2, step 3: renaming the file on GitHub</figcaption></figure>
+      <p>Look at the file list. If your file is called <code>index.html</code>, skip to step 4. If it still has the long name from the download:</p>
+      <ol>
+        <li>Click the file name to open it.</li>
+        <li>Click the <strong>pencil</strong> (Edit this file) at the top right of the code.</li>
+        <li>In the name box at the top, change the name to <code>index.html</code>, all lowercase with no spaces.</li>
+        <li>Click <strong>Commit changes…</strong>, check the message, then click <strong>Commit changes</strong> again.</li>
+      </ol>
+      <div class="callout">
+        <strong>Why index.html?</strong>
+        When someone visits a website, the server shows the file called <code>index.html</code> first. With any other name, your link shows an error page.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 4 -->
+  <section class="step" data-step="g4">
+    <div class="step-head">
+      <div class="num gh">4</div>
+      <div><h3>Turn on GitHub Pages</h3><p>Tell GitHub to serve your file as a website.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-4-turn-on-pages.mp4#t=1.2"></video><figcaption>▶ Part 2, step 4: Settings → Pages → main → Save</figcaption></figure>
+      <ol>
+        <li>Click <strong>Settings</strong> in the bar at the top of your repository.</li>
+        <li>Choose <strong>Pages</strong> in the menu on the left.</li>
+        <li>Under <em>Build and deployment</em>, leave Source as <strong>Deploy from a branch</strong>.</li>
+        <li>Under <strong>Branch</strong>, change <em>None</em> to <strong>main</strong>, and leave the folder as <strong>/ (root)</strong>.</li>
+        <li>Click <strong>Save</strong>. A banner says <em>GitHub Pages source saved</em>.</li>
+      </ol>
+      <div class="callout">
+        <strong>What's a branch?</strong>
+        A branch is a separate line of work in a repository. You only have one, called <code>main</code>, which is all you need here.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 5 -->
+  <section class="step" data-step="g5">
+    <div class="step-head">
+      <div class="num gh">5</div>
+      <div><h3>Wait for it to deploy</h3><p>GitHub builds your site. It usually takes a minute or two.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-5-wait-for-deploy.mp4#t=1.2"></video><figcaption>▶ Part 2, step 5: watching the build in Actions</figcaption></figure>
+      <ol>
+        <li>Click <strong>Actions</strong> in the bar at the top of your repository.</li>
+        <li>Open <strong>pages build and deployment</strong>. It goes through <em>build</em>, then <em>deploy</em>.</li>
+        <li>A yellow dot means it's still working, so wait. A <strong>green tick</strong> and <strong>Success</strong> means your site is live.</li>
+      </ol>
+      <div class="callout warn">
+        <strong>Warnings and errors</strong>
+        Yellow warnings under <em>Annotations</em> are usually about GitHub's own tools and don't stop your site working. A <strong>red cross</strong> means it failed: open it, copy the error message, and paste it into GitHub Copilot's chat (the Copilot icon at the top of GitHub) or into Claude, asking what went wrong.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 6 -->
+  <section class="step" data-step="g6">
+    <div class="step-head">
+      <div class="num gh">6</div>
+      <div><h3>Add the link and test it</h3><p>Put the web address on your repository, then try it.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-6-add-link-and-test.mp4#t=1.2"></video><figcaption>▶ Part 2, step 6: adding the website link and opening the live prototype</figcaption></figure>
+      <ol>
+        <li>Go back to the <strong>Code</strong> tab of your repository.</li>
+        <li>Click the <strong>cog</strong> next to <strong>About</strong> on the right.</li>
+        <li>Tick <strong>Use your GitHub Pages website</strong>. The address fills in for you.</li>
+        <li>Click <strong>Save changes</strong>. Your link now appears under About.</li>
+        <li>Click the link (or right-click → open in a new tab). Your address looks like <code>your-username.github.io/cafe_app/</code>.</li>
+        <li>Run through the Part 1 step 5 checklist again, <strong>on your phone too</strong>.</li>
+      </ol>
+      <div class="callout tip">
+        <strong>Share it with your testers</strong>
+        Copy the link into a message, or make a <strong>QR code</strong> for in-person sessions. In Chrome or Edge, right-click the page and choose <em>Create QR code for this page</em>.
+      </div>
+    </div>
+  </section>
+
+  <!-- GH 7 -->
+  <section class="step" data-step="g7">
+    <div class="step-head">
+      <div class="num gh">7</div>
+      <div><h3>Add a README and description</h3><p>Explain what the prototype is, for testers, tutors and your portfolio.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-7-readme-and-description.mp4#t=1.2"></video><figcaption>▶ Part 2, step 7: getting Claude to write the README, then adding it on GitHub</figcaption></figure>
+      <p><strong>A. Ask Claude to write it.</strong> Go back to the <strong>same chat</strong> you built the prototype in (find it under <em>Chats and tasks</em> in the sidebar) and send:</p>
+      <div class="copybox">
+        <div class="label">README prompt</div>
+        <button class="copybtn" type="button">Copy</button>
+<pre>Based on the contents, create a brief description of the project. This prototype is intended for user experience (UX) testing, so provide a simple overview of the application's purpose, key features, and the files included in the prototype. The prototype file is called index.html.
+
+Create this as a README.md</pre>
+      </div>
+      <p>Claude creates a <strong>README.md</strong> file. Click it to open it, then click <strong>Copy</strong>.</p>
+      <p><strong>B. Add it on GitHub.</strong></p>
+      <ol>
+        <li>In your repository, click <strong>README.md</strong>, then the <strong>pencil</strong> to edit it.</li>
+        <li>Delete what's there and paste in Claude's text.</li>
+        <li>Click <strong>Preview</strong> to check it, and <strong>read it through</strong>. If it mentions the old long file name, change it to <code>index.html</code>.</li>
+        <li>Click <strong>Commit changes…</strong> then <strong>Commit changes</strong>.</li>
+      </ol>
+      <p><strong>C. Add a description.</strong> Click the <strong>cog</strong> next to About again, paste the first sentence or two of the README into <strong>Description</strong>, and click <strong>Save changes</strong>.</p>
+      <div class="callout tip">
+        <strong>Always fill these in</strong>
+        A repository with a README and description tells anyone who finds it what the project is and how to use it. That matters for showcasing your work and, later, for sharing projects as open source.
+      </div>
+    </div>
+  </section>
+
+  <h2>Troubleshooting: GitHub Pages</h2>
+
+  <details>
+    <summary>My link shows a "404 – There isn't a GitHub Pages site here" page</summary>
+    <ul>
+      <li>Wait a couple of minutes and check <strong>Actions</strong> shows a green tick (step 5).</li>
+      <li>Check the file is called exactly <code>index.html</code> (step 3).</li>
+      <li>Check <strong>Settings → Pages</strong> shows Branch <strong>main</strong> and that it was saved (step 4).</li>
+      <li>Check the repository is <strong>Public</strong>.</li>
+    </ul>
+  </details>
+
+  <details>
+    <summary>I changed my prototype but the website still shows the old one</summary>
+    <p>To update it, export the new version from Claude, rename it to <code>index.html</code>, then use <strong>Add file → Upload files</strong> again. A file with the same name replaces the old one. Commit, wait for the green tick in Actions, then refresh the page (<code>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;R</code> or <code>⌘&nbsp;+&nbsp;Shift&nbsp;+&nbsp;R</code>) so your browser doesn't show a saved copy.</p>
+  </details>
+
+  <details>
+    <summary>Pages says I need to upgrade or make the repository public</summary>
+    <p>On a free account, Pages only works with public repositories. Go to <strong>Settings → General</strong>, scroll to the <em>Danger Zone</em>, and change the visibility to <strong>Public</strong>.</p>
+  </details>
+
+  <section class="next">
+    <h2>🎉 You're live. Now test it.</h2>
+    <p>Your prototype is on the web at its own link, works on phones and computers, and needs no Claude account to use. Send the link or QR code to your participants and start your user testing.</p>
+    <p>After each round of testing, go back to the same Claude chat, fix what you learned (Part 1, steps 5–8), and upload the new <code>index.html</code> to replace the old one.</p>
+  </section>
+  </div>
+
+  <div class="route-tester">
+  <h2 id="part2t">Part 2: Put it in the Desktop Tester</h2>
+  <p>The Desktop Tester is a small app that runs on GitHub Pages. It shows your prototype on the right and a guide panel on the left that reads out each task and ticks it off as the tester completes it. You'll make your own copy of the app, put your <code>index.html</code> inside it, and write the tasks with a form. Everything happens in the browser, with no coding.</p>
+  <div class="callout">
+    <strong>You'll need</strong>
+    A free GitHub account, your tested <code>index.html</code> from Part 1, and <code>my-test-setup.txt</code> (Claude's screen and button tables from step 5).
+  </div>
+  <div class="callout tip">
+    <strong>One folder, always called project</strong>
+    The app always opens the test in <code>tests/project/</code>. Your prototype goes in <code>tests/project/prototype/</code> and your tasks in <code>tests/project/test.json</code>. Keep that name and your link never changes: for a new version, you just swap the files inside.
+  </div>
+  <div class="callout">
+    <strong>Where everything goes</strong>
+    <pre class="mono" style="margin:8px 0 0;background:none;border:none;padding:0;color:#c9d1d9">your-repo/
+├── index.html        ← the tester app (don't change)
+├── builder.html      ← the form for writing tasks
+├── README.md
+└── tests/
+    └── project/
+        ├── test.json      ← your tasks (step 6)
+        └── prototype/
+            └── index.html ← your prototype (step 4)</pre>
+  </div>
+
+  <!-- T1 -->
+  <section class="step" data-step="t1">
+    <div class="step-head">
+      <div class="num gh">1</div>
+      <div><h3>Download the Desktop Tester</h3><p>Get your own copy of the app as a ZIP file.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Open <a href="https://github.com/martinsolent/desktop_tester" target="_blank" rel="noopener">github.com/martinsolent/desktop_tester</a>.</li>
+        <li>Click the green <strong>Code</strong> button, then <strong>Download ZIP</strong>.</li>
+      </ol>
+      <figure class="shot"><img src="tester-images/t1-download-zip.jpg" alt="The desktop_tester repository on GitHub with the green Code menu open and Download ZIP at the bottom of the menu." loading="lazy"><figcaption>Code → Download ZIP</figcaption></figure>
+      <ol start="3">
+        <li>Find the ZIP in your Downloads folder and unzip it (on Windows, right-click → <strong>Extract All</strong>; on a Mac, double-click it).</li>
+        <li>Open the unzipped folder. Windows often puts another folder with the same name inside it. Keep opening folders until you see <code>index.html</code>, <code>builder.html</code> and a <code>tests</code> folder.</li>
+      </ol>
+      <figure class="shot"><img src="tester-images/t1-unzipped-wrapper.jpg" alt="File Explorer showing the unzipped desktop_tester-main folder, which holds a second desktop_tester-main folder inside it." loading="lazy"><figcaption>The outer folder only holds another folder. Open it.</figcaption></figure>
+      <figure class="shot"><img src="tester-images/t1-tool-files.jpg" alt="The inner folder listing apps-script, tests, builder.html, index.html and README.md." loading="lazy"><figcaption>These are the files you'll upload in step 2.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- T2 -->
+  <section class="step" data-step="t2">
+    <div class="step-head">
+      <div class="num gh">2</div>
+      <div><h3>Make a new repository and upload the app</h3><p>This repo will hold the tester and your prototype together.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-1-create-repository.mp4#t=1.2"></video><figcaption>▶ Creating a repository. Call yours something like <code>usertest</code>.</figcaption></figure>
+      <ol>
+        <li>On GitHub, click <strong>New</strong> to make a repository. Give it a name such as <code>usertest</code> (any name is fine: lowercase, no spaces). Leave it <strong>Public</strong> and click <strong>Create repository</strong>.</li>
+        <li>On the new repo's page, click <strong>uploading an existing file</strong> (or <strong>Add file → Upload files</strong>).</li>
+        <li>Select <em>everything inside</em> the folder you opened at the end of step 1 (<code>index.html</code>, <code>builder.html</code>, <code>README.md</code>, <code>tests</code> and <code>apps-script</code>) and drag it all into the upload box. Don't drag the outer folder itself.</li>
+        <li>Wait for every file to finish, then click <strong>Commit changes</strong>.</li>
+      </ol>
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-2-upload-file.mp4#t=1.2"></video><figcaption>▶ Add file → Upload files → Commit changes. This clip uploads one file; you'll drag in several.</figcaption></figure>
+      <figure class="shot"><img src="tester-images/t2-repo-files.jpg" alt="A GitHub repository called usertest showing apps-script and tests folders plus builder.html, index.html and README.md at the top level." loading="lazy"><figcaption>Check: <code>index.html</code> sits at the top of the repo, not inside another folder.</figcaption></figure>
+      <div class="callout warn">
+        <strong>Everything inside a folder called desktop_tester-main?</strong>
+        You dragged the outer folder. The app won't load from there. Delete that folder (see step 4 for how) and upload the files inside it instead.
+      </div>
+    </div>
+  </section>
+
+  <!-- T3 -->
+  <section class="step" data-step="t3">
+    <div class="step-head">
+      <div class="num gh">3</div>
+      <div><h3>Turn on GitHub Pages</h3><p>Same as for any site: this gives the app its link.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-4-turn-on-pages.mp4#t=1.2"></video><figcaption>▶ Settings → Pages → main → Save</figcaption></figure>
+      <ol>
+        <li>Open <strong>Settings</strong> on your repo, then <strong>Pages</strong> in the left menu.</li>
+        <li>Under <strong>Branch</strong>, choose <strong>main</strong> and <strong>/ (root)</strong>, then <strong>Save</strong>.</li>
+        <li>Wait a minute or two. Open the <strong>Actions</strong> tab to watch it build: a green tick means it's live.</li>
+        <li>Your link will be <code>https://your-username.github.io/usertest/</code>. Open it. You should see the sample test running, which shows the app works.</li>
+      </ol>
+      <figure class="vid"><video controls preload="metadata" playsinline src="github-videos/github-5-wait-for-deploy.mp4#t=1.2"></video><figcaption>▶ Watching the build in Actions</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- T4 -->
+  <section class="step" data-step="t4">
+    <div class="step-head">
+      <div class="num gh">4</div>
+      <div><h3>Swap in your prototype</h3><p>Replace the sample prototype with your own <code>index.html</code>.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <p>Inside the app there's a <code>tests</code> folder with a <code>project</code> folder in it. That holds the sample's <code>test.json</code> and a <code>prototype</code> folder full of sample files. The pictures below show it in the unzipped download; your repo on GitHub has exactly the same folders.</p>
+      <figure class="shot"><img src="tester-images/t4-tests-folder.jpg" alt="The tests folder on GitHub containing a single folder called project." loading="lazy"><figcaption>tests → project</figcaption></figure>
+      <figure class="shot"><img src="tester-images/t4-project-folder.jpg" alt="The project folder containing a prototype folder and a test.json file." loading="lazy"><figcaption>The prototype folder is what you'll replace.</figcaption></figure>
+      <figure class="shot"><img src="tester-images/t4-sample-prototype.jpg" alt="The sample prototype folder holding basket.js, index.html, menu.html, order.html, pay.html and site.css." loading="lazy"><figcaption>The sample uses several files. Yours is just one.</figcaption></figure>
+      <h4>On GitHub in the browser</h4>
+      <ol>
+        <li>Open the <code>prototype</code> folder. Click the <strong>…</strong> menu at the top right of the file list and choose <strong>Delete directory</strong>, then <strong>Commit changes</strong>. This removes the folder and every sample file in it.</li>
+        <li>Back in <code>tests/project</code>, click <strong>Add file → Upload files</strong>.</li>
+        <li>On your computer, make a folder called <code>prototype</code> and put your <code>index.html</code> inside. Drag that whole <code>prototype</code> folder into the upload box. GitHub keeps the folder name.</li>
+        <li>Click <strong>Commit changes</strong>. You should now have <code>tests/project/prototype/index.html</code>.</li>
+      </ol>
+      <figure class="shot" style="max-width:300px"><img src="tester-images/t4-delete-directory.jpg" alt="GitHub's three-dot menu open at the top right of a folder, with Delete directory in red." loading="lazy"><figcaption>The <strong>…</strong> menu → <strong>Delete directory</strong></figcaption></figure>
+      <figure class="shot"><img src="tester-images/t4-directory-deleted.jpg" alt="The usertest repo's tests/project folder after the delete: a blue Directory successfully deleted message, test.json still listed, and the Add file menu open on Upload files." loading="lazy"><figcaption>After the delete, <code>test.json</code> is still there. <strong>Add file → Upload files</strong> brings in your new <code>prototype</code> folder.</figcaption></figure>
+      <div class="callout warn">
+        <strong>The file must be called index.html</strong>
+        The tester always opens <code>prototype/index.html</code>. A file called <code>index (1).html</code> or <code>cafe-app.html</code> won't load. Rename it before you upload.
+      </div>
+      <details>
+        <summary>Using GitHub Desktop instead? Swap the files in your local copy</summary>
+        <p>Deleting and uploading in the browser is fine for one file, but it gets fiddly with lots of changes. If you've cloned the repo with GitHub Desktop, do it in your normal file manager instead: delete the old files in <code>tests/project/prototype</code>, copy in your new <code>index.html</code>, then <strong>Commit</strong> and <strong>Push origin</strong> in GitHub Desktop.</p>
+        <figure class="shot"><img src="tester-images/local-repo-copy.jpg" alt="The cloned repository open in File Explorer, showing the same apps-script and tests folders and top-level files as on GitHub." loading="lazy"><figcaption>Your local copy has the same folders as the repo on GitHub.</figcaption></figure>
+        <figure class="vid wide"><video controls preload="metadata" playsinline src="tester-videos/swap-prototype-files.mp4#t=0.5"></video><figcaption>▶ Swapping files locally: replace test.json, delete the old prototype files, add the new one and rename it to index.html. No sound.</figcaption></figure>
+      </details>
+    </div>
+  </section>
+
+  <!-- T5 -->
+  <section class="step" data-step="t5">
+    <div class="step-head">
+      <div class="num gh">5</div>
+      <div><h3>Write your tasks in the builder</h3><p>A form that turns your tasks into a <code>test.json</code> file.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <ol>
+        <li>Open <code>https://your-username.github.io/usertest/builder.html?test=project</code>. It loads the current test so you can edit it.</li>
+        <li>Fill in the title and the welcome text testers will see first.</li>
+        <li>Leave <strong>Folder name</strong> as <code>project</code>.</li>
+        <li>Add one task for each thing you want testers to try. Write it as a goal, not instructions: "Book a table for two on Friday" rather than "Click Book".</li>
+        <li>For each task, choose an option under <strong>How is it ticked off?</strong> Open <code>my-test-setup.txt</code> and copy from Claude's tables:
+          <ul>
+            <li><strong>Tester reaches a page or section</strong>: type the screen's hash, e.g. <code>#confirmed</code>. Use a success screen if there is one, so the task only ticks once it really worked.</li>
+            <li><strong>Tester clicks a button or link</strong>: type the button's id with a <code>#</code> in front, e.g. <code>#confirm-booking</code>, or the button's exact text.</li>
+            <li><strong>Tester presses "I've done this"</strong>: for anything the app can't see, such as reading or comparing.</li>
+          </ul>
+        </li>
+        <li>Click <strong>Preview as tester</strong> and run through every task. Each one should tick by itself.</li>
+        <li>Click <strong>Download test.json</strong>.</li>
+      </ol>
+      <figure class="vid"><video controls preload="metadata" playsinline src="tester-videos/t5-builder.mp4#t=1.2"></video><figcaption>▶ Part 2, step 5: the Hushroom tasks in the builder, with the Folder name left as <code>project</code></figcaption></figure>
+      <div class="callout">
+        <strong>Example: the Hushroom room-booking prototype</strong>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem">
+          <tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Task</th><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">How is it ticked off?</th><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--border)">Page or section</th></tr>
+          <tr><td style="padding:4px 8px">Find a room</td><td style="padding:4px 8px">Tester reaches a page or section</td><td style="padding:4px 8px"><code>#results</code></td></tr>
+          <tr><td style="padding:4px 8px">Book it</td><td style="padding:4px 8px">Tester reaches a page or section</td><td style="padding:4px 8px"><code>#success</code></td></tr>
+          <tr><td style="padding:4px 8px">Check the booking</td><td style="padding:4px 8px">Tester reaches a page or section</td><td style="padding:4px 8px"><code>#bookings</code></td></tr>
+        </table>
+      </div>
+      <div class="callout tip">
+        <strong>The builder remembers your draft</strong>
+        It saves as you type, in this browser only. If you open it on another computer, add <code>?test=project</code> to the link to load what's on GitHub.
+      </div>
+    </div>
+  </section>
+
+  <!-- T6 -->
+  <section class="step" data-step="t6">
+    <div class="step-head">
+      <div class="num gh">6</div>
+      <div><h3>Upload test.json</h3><p>Replace the sample tasks with yours.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="tester-videos/t6-upload-test-json.mp4#t=1.2"></video><figcaption>▶ Part 2, step 6: uploading test.json into tests/project</figcaption></figure>
+      <ol>
+        <li>Check the downloaded file is called exactly <code>test.json</code>. Rename it if your browser added <code>(1)</code>.</li>
+        <li>On GitHub, open <code>tests/project</code> and click <strong>Add file → Upload files</strong>.</li>
+        <li>Drag in your <code>test.json</code> and click <strong>Commit changes</strong>. Because the name matches, it replaces the sample file. There's no need to delete the old one first.</li>
+      </ol>
+      <figure class="shot"><img src="tester-images/t6-project-json.jpg" alt="A project folder holding a prototype folder and a test.json file." loading="lazy"><figcaption>When you're done, <code>tests/project</code> holds your <code>prototype</code> folder and your <code>test.json</code>.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- T7 -->
+  <section class="step" data-step="t7">
+    <div class="step-head">
+      <div class="num gh">7</div>
+      <div><h3>Try it, then share the link</h3><p>Run the test yourself before anyone else does.</p></div>
+      <label class="tick"><input type="checkbox"> Done</label>
+    </div>
+    <div class="step-body">
+      <figure class="vid"><video controls preload="metadata" playsinline src="tester-videos/t7-run-the-test.mp4#t=1.2"></video><figcaption>▶ Part 2, step 7: running the Hushroom test, with each task ticking itself off</figcaption></figure>
+      <ol>
+        <li>Wait a minute for the Actions build to finish, then open <code>https://your-username.github.io/usertest/</code>. That plain link is the one you share.</li>
+        <li>Still seeing the sample? Press <code>Ctrl&nbsp;+&nbsp;Shift&nbsp;+&nbsp;R</code> (<code>⌘&nbsp;+&nbsp;Shift&nbsp;+&nbsp;R</code> on a Mac) to reload without the old copy.</li>
+        <li>Complete the whole test as if you were a participant. Check every task ticks, the audio plays, and the results download at the end.</li>
+        <li>Send the link to your testers and ask them to use a laptop or desktop with Chrome, Edge or Firefox. Each tester downloads a results file at the end and sends it to you (or it goes straight to a Google Sheet, if you've set that up: see the README).</li>
+      </ol>
+    </div>
+  </section>
+
+  <h2>Troubleshooting: Desktop Tester</h2>
+
+  <details>
+    <summary>The page says "404" or "Couldn't load the test"</summary>
+    <figure class="shot"><img src="tester-images/err-404.jpg" alt="The tester showing This test couldn't be loaded. Could not find tests/project/test.json (error 404)." loading="lazy"></figure>
+    <p>Just uploaded something? GitHub Pages can take a minute or two to catch up, so wait and reload before changing anything. If it's still there, check the folder names exactly: <code>tests/project/test.json</code> and <code>tests/project/prototype/index.html</code>, all lowercase. Then check <code>index.html</code> is at the top of the repo, not inside a <code>desktop_tester-main</code> folder. After any fix, wait for the Actions build and hard-reload.</p>
+  </details>
+
+  <details>
+    <summary>A task won't tick itself off</summary>
+    <p>Open the builder's <strong>Preview as tester</strong> and do the task. If the address bar inside the prototype doesn't change to the hash you typed, the prototype isn't using hashes for that screen: send Claude the <strong>Make it test-ready</strong> prompt from Part 1 step 6. If it's a click task, check the id in <code>my-test-setup.txt</code> matches the builder exactly, with the <code>#</code> in front. Testers can always use <strong>I've done this</strong>, so nobody gets stuck.</p>
+  </details>
+
+  <details>
+    <summary>The prototype shows a burger menu or a phone layout</summary>
+    <p>The tester's frame is narrower than the full screen. Ask Claude: <em>"Show the full desktop layout from 860px wide, with the full navigation and no burger menu. Don't change anything else."</em></p>
+  </details>
+
+  <details>
+    <summary>Preview in the builder shows the old sample tasks</summary>
+    <p>The builder loaded a saved draft. Open it with <code>?test=project</code> on the end of the link to load what's on GitHub, or start again and leave the folder name as <code>project</code>.</p>
+  </details>
+
+  <details>
+    <summary>My upload made a folder called "prototype (1)" or put index.html in the wrong place</summary>
+    <p>Delete the wrong file or folder (open it, <strong>…</strong> menu, <strong>Delete file</strong> or <strong>Delete directory</strong>) and upload again from inside <code>tests/project</code>. GitHub removes a folder once its last file is deleted.</p>
+  </details>
+
+  <section class="next">
+    <h2>🎉 Your test is live.</h2>
+    <p>Testers open one plain link, the guide panel talks them through your tasks, and you get a results file back from each one.</p>
+    <p>After each round of testing, fix what you learned in the same Claude chat (Part 1, steps 5–8). Then upload the new <code>index.html</code> into <code>tests/project/prototype</code>; the same name replaces the old file. If your screens or buttons changed, update the tasks in the builder and upload the new <code>test.json</code> too. The link stays the same.</p>
+  </section>
+  </div>
+
+
+  <footer>Vibe Coding for UX Prototyping · Free plan guide</footer>
+</main>
+
+<script>
+(function(){
+  var KEY = 'claudeFreeSingleFileGuide.v1';
+  var steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+  var RKEY = 'claudeFreeSingleFileGuide.route';
+  var q = new URLSearchParams(location.search).get('route');
+  var route = (q === 'tester' || q === 'share') ? q : (function(){ try { return localStorage.getItem(RKEY) || 'share'; } catch(e){ return 'share'; } })();
+  function applyRoute(){
+    document.body.setAttribute('data-route', route);
+    document.querySelectorAll('[data-route]').forEach(function(b){ if (b.tagName === 'BUTTON') b.setAttribute('aria-pressed', String(b.getAttribute('data-route') === route)); });
+    var pill = document.getElementById('routePill'); if (pill) pill.textContent = route === 'tester' ? '🖥 Desktop Tester route' : '🔗 Share-a-link route';
+    document.querySelectorAll('video').forEach(function(v){ if (v.offsetParent === null) v.pause(); });
+    try { localStorage.setItem(RKEY, route); } catch(e){}
+  }
+  applyRoute();
+  document.querySelectorAll('button[data-route]').forEach(function(b){
+    b.addEventListener('click', function(){ route = b.getAttribute('data-route'); applyRoute(); render(); });
+  });
+  var fill = document.getElementById('barFill');
+  var txt = document.getElementById('barText');
+
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){ return {}; } }
+  function save(s){ try { localStorage.setItem(KEY, JSON.stringify(s)); } catch(e){} }
+
+  var state = load();
+
+  function render(){
+    var done = 0, total = 0;
+    steps.forEach(function(st){
+      var n = st.getAttribute('data-step');
+      var box = st.querySelector('.tick input');
+      box.checked = !!state[n];
+      st.classList.toggle('done', !!state[n]);
+      if (st.offsetParent === null) return;
+      total++;
+      if (state[n]) done++;
+    });
+    fill.style.width = (total ? done / total * 100 : 0) + '%';
+    txt.textContent = done + ' of ' + total + ' steps';
+  }
+
+  steps.forEach(function(st){
+    st.querySelector('.tick input').addEventListener('change', function(e){
+      state[st.getAttribute('data-step')] = e.target.checked;
+      save(state); render();
+    });
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', function(){
+    state = {}; save(state); render();
+  });
+
+  document.querySelectorAll('.copybtn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var text = btn.parentNode.querySelector('pre').innerText;
+      function ok(){ btn.textContent = 'Copied ✓'; btn.classList.add('ok');
+        setTimeout(function(){ btn.textContent = 'Copy'; btn.classList.remove('ok'); }, 1800); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(ok, fallback);
+      } else { fallback(); }
+      function fallback(){
+        var ta = document.createElement('textarea'); ta.value = text;
+        ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); ok(); } catch(e){}
+        document.body.removeChild(ta);
+      }
+    });
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
